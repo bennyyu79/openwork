@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createDeepAgent } from "deepagents"
 import { getDefaultModel } from "../ipc/models"
-import { getApiKey, getThreadCheckpointPath } from "../storage"
+import { getApiKey, getThreadCheckpointPath, getBaseUrl, getAuthToken } from "../storage"
 import { ChatAnthropic } from "@langchain/anthropic"
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
@@ -65,16 +65,60 @@ function getModelInstance(
   const model = modelId || getDefaultModel()
   console.log("[Runtime] Using model:", model)
 
+  // Check if using LiteLLM proxy (BASE_URL is set)
+  const liteLLMBaseUrl = getBaseUrl("anthropic")
+
   // Determine provider from model ID
   if (model.startsWith("claude")) {
+    // LiteLLM proxy uses OpenAI-compatible interface
+    if (liteLLMBaseUrl) {
+      const authToken = getAuthToken("anthropic")
+      const apiKey = getApiKey("anthropic")
+
+      console.log("[Runtime] Using LiteLLM proxy for Anthropic:", {
+        hasApiKey: !!apiKey,
+        hasAuthToken: !!authToken,
+        baseUrl: liteLLMBaseUrl
+      })
+
+      // Use auth token if available, otherwise fall back to API key
+      const effectiveKey = authToken || apiKey
+      if (!effectiveKey) {
+        throw new Error("API key not configured for LiteLLM proxy")
+      }
+
+      // Set OPENAI_API_KEY in process.env for OpenAI SDK
+      // This is required because ChatOpenAI may check this env var internally
+      process.env.OPENAI_API_KEY = effectiveKey
+
+      // LiteLLM uses OpenAI-compatible API format
+      return new ChatOpenAI({
+        model,
+        configuration: {
+          baseURL: liteLLMBaseUrl
+        }
+      })
+    }
+
+    // Standard Anthropic API (no proxy)
+    const authToken = getAuthToken("anthropic")
     const apiKey = getApiKey("anthropic")
-    console.log("[Runtime] Anthropic API key present:", !!apiKey)
-    if (!apiKey) {
+
+    console.log("[Runtime] Anthropic config:", {
+      hasApiKey: !!apiKey,
+      hasAuthToken: !!authToken,
+      baseUrl: "default (official API)"
+    })
+
+    // Use auth token if available, otherwise fall back to API key
+    const effectiveKey = authToken || apiKey
+    if (!effectiveKey) {
       throw new Error("Anthropic API key not configured")
     }
+
     return new ChatAnthropic({
       model,
-      anthropicApiKey: apiKey
+      anthropicApiKey: effectiveKey
     })
   } else if (
     model.startsWith("gpt") ||
@@ -83,20 +127,44 @@ function getModelInstance(
     model.startsWith("o4")
   ) {
     const apiKey = getApiKey("openai")
-    console.log("[Runtime] OpenAI API key present:", !!apiKey)
+    const baseUrl = getBaseUrl("openai")
+
+    console.log("[Runtime] OpenAI config:", {
+      hasApiKey: !!apiKey,
+      baseUrl: baseUrl || "default"
+    })
+
     if (!apiKey) {
       throw new Error("OpenAI API key not configured")
     }
-    return new ChatOpenAI({
+
+    const config: Record<string, unknown> = {
       model,
       openAIApiKey: apiKey
-    })
+    }
+
+    // Add custom base URL if configured (for proxy/custom endpoints)
+    if (baseUrl) {
+      config.configuration = {
+        baseURL: baseUrl
+      }
+    }
+
+    return new ChatOpenAI(config)
   } else if (model.startsWith("gemini")) {
     const apiKey = getApiKey("google")
-    console.log("[Runtime] Google API key present:", !!apiKey)
+    const baseUrl = getBaseUrl("google")
+
+    console.log("[Runtime] Google config:", {
+      hasApiKey: !!apiKey,
+      baseUrl: baseUrl || "default"
+    })
+
     if (!apiKey) {
       throw new Error("Google API key not configured")
     }
+
+    // For Google, pass the config directly - the library will handle baseURL
     return new ChatGoogleGenerativeAI({
       model,
       apiKey: apiKey
