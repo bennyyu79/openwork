@@ -95,6 +95,13 @@ export function getApiKey(provider: string): string | undefined {
   return process.env[envVarName]
 }
 
+// Get custom auth token for proxy servers (alternative to standard API key)
+export function getAuthToken(provider: string): string | undefined {
+  const envVarName = `${provider.toUpperCase()}_AUTH_TOKEN`
+  const env = parseEnvFile()
+  return env[envVarName] || process.env[envVarName]
+}
+
 export function setApiKey(provider: string, apiKey: string): void {
   const envVarName = ENV_VAR_NAMES[provider]
   if (!envVarName) return
@@ -121,4 +128,11 @@ export function deleteApiKey(provider: string): void {
 
 export function hasApiKey(provider: string): boolean {
   return !!getApiKey(provider)
+}
+
+// Get custom base URL for a provider (for proxy/custom endpoints)
+export function getBaseUrl(provider: string): string | undefined {
+  const envVarName = `${provider.toUpperCase()}_BASE_URL`
+  const env = parseEnvFile()
+  return env[envVarName] || process.env[envVarName]
 }

@@ -70,6 +70,23 @@ const AVAILABLE_MODELS: ModelConfig[] = [
     description: "Fast and capable previous generation model",
     available: true
   },
+  // Anthropic Claude 3.5 series (2024 models)
+  {
+    id: "claude-3-5-sonnet-20241022",
+    name: "Claude 3.5 Sonnet",
+    provider: "anthropic",
+    model: "claude-3-5-sonnet-20241022",
+    description: "Strong performance for complex tasks, widely compatible",
+    available: true
+  },
+  {
+    id: "claude-3-5-haiku-20241022",
+    name: "Claude 3.5 Haiku",
+    provider: "anthropic",
+    model: "claude-3-5-haiku-20241022",
+    description: "Fast and efficient model for routine tasks",
+    available: true
+  },
   // OpenAI GPT-5 series (latest as of Jan 2026)
   {
     id: "gpt-5.2",

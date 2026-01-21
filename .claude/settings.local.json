@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat ~/.openwork/.env)",
+      "Bash(cat ~/.openwork/settings.json)",
+      "Bash(git add src/main/agent/runtime.ts)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: support LiteLLM proxy and custom base URLs for all providers\n\n- Add LiteLLM proxy support for Anthropic models using ChatOpenAI wrapper\n- Support custom base URLs \\(ANTHROPIC_BASE_URL, OPENAI_BASE_URL, GOOGLE_BASE_URL\\) \n- Add auth token support \\(ANTHROPIC_AUTH_TOKEN\\) as alternative to API keys\n- Fix Missing credentials error by setting process.env.OPENAI_API_KEY for proxy\n- Improve logging to show API key status and base URL configuration\n- Refactor model instance creation to handle proxy and direct API modes\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 3.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push origin main)"
+    ]
+  }
+}
